@@ -1,0 +1,15 @@
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  margin: 0;
+}
+
+.connect-wallet-button,
+.jackpot-amount,
+.random-number-generator,
+.action-buttons {
+  text-align: center;
+  margin-bottom: 20px;
+}

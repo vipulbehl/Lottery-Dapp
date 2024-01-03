@@ -1,25 +1,32 @@
-import logo from './logo.svg';
-import './App.css';
+// App.js
+import React, { useState } from 'react';
+import ConnectWalletButton from './components/ConnectWalletButton';
+import JackpotAmount from './components/JackpotAmount';
+import RandomNumberGenerator from './components/JackpotNumberGenerator';
+import ActionButtons from './components/ActionButtons';
+import './styles.css';
 
-function App() {
+const App = () => {
+  const [jackpotAmount, setJackpotAmount] = useState(1000000);
+  const [winnerNumber, setWinnerNumber] = useState(null);
+
+  const handlePlay = () => {
+    // Add logic to handle the Play button click
+    // This can include updating jackpot amount, generating a winner number, etc.
+  };
+
+  const handleBuyTicket = () => {
+    // Add logic to handle the Buy Ticket button click
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      <ConnectWalletButton />
+      <JackpotAmount amount={jackpotAmount} />
+      <RandomNumberGenerator winnerNumber={winnerNumber} />
+      <ActionButtons onPlay={handlePlay} onBuyTicket={handleBuyTicket} />
     </div>
   );
-}
+};
 
 export default App;
