@@ -7,8 +7,8 @@ import ActionButtons from './components/ActionButtons';
 import './styles.css';
 
 const App = () => {
-  const [jackpotAmount, setJackpotAmount] = useState(1000000);
-  const [winnerNumber, setWinnerNumber] = useState(null);
+  const [jackpotAmount] = useState(1000000);
+  const [winnerNumber] = useState(null);
 
   const handlePlay = () => {
     // Add logic to handle the Play button click
