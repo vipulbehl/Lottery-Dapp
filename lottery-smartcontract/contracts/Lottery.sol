@@ -1,15 +1,17 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.23;
 
 import "hardhat/console.sol";
 
 contract Lottery {
     address public owner;
-    uint256 public jackpotAmount = 0;
     uint256 public ticketPrice = 100000000000000000; // Amount in wei equivalent to 0.1 ETH
+    uint256 public randomRange = 100000;
     mapping(address => uint256) userAddressTicketMap;
 
-     event Transfer(address indexed _from, address indexed _to, uint256 _value);
+    event Transfer(address indexed _from, address indexed _to, uint256 _value);
+    event Won(address indexed _account, uint256 _jackpotNumber);
+    event Lost(uint256 _jackpotNumber);
 
     constructor() {
         owner = msg.sender;
@@ -29,6 +31,13 @@ contract Lottery {
     }
 
     /**
+     * Allows the owner to set the range for random number
+     */
+    function setRandomRange(uint256 range) public onlyOwner {
+        randomRange = range;
+    }
+
+    /**
      * Deducts the ticketPrice from user's account
      * Transfers money to contract
      * Generate a random ticket for the user
@@ -40,8 +49,6 @@ contract Lottery {
         
         payable(msg.sender);
         emit Transfer(msg.sender, address(this), ticketPrice);
-        
-        jackpotAmount += ticketPrice;
 
         uint256 ticketNumber = generateRandomNumber();
         userAddressTicketMap[msg.sender] = ticketNumber;
@@ -62,9 +69,10 @@ contract Lottery {
         uint256 jackpotNumber = generateRandomNumber();
         
         if (ticketNumber == jackpotNumber) {
-            payable(msg.sender).transfer(jackpotAmount);
-            emit Transfer(owner, msg.sender, jackpotAmount);
-            jackpotAmount = 0;
+            payable(msg.sender).transfer(address(this).balance);
+            emit Won(msg.sender, jackpotNumber);
+        } else {
+            emit Lost(jackpotNumber);
         }
         
         // Resetting user's ticket
@@ -75,7 +83,6 @@ contract Lottery {
     function generateRandomNumber() private view returns (uint256) {
         uint256 blockValue = uint256(blockhash(block.number - 1)); // Use the previous block's hash
         uint256 randomNum = uint256(keccak256(abi.encodePacked(block.timestamp, blockValue, owner)));
-        
-        return (randomNum % 100000) + 1; // Get a random number between 1 and 100000
+        return (randomRange == 0) ? 1 : (randomNum % randomRange) + 1;
     }
 }

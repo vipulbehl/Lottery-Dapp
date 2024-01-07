@@ -27,7 +27,7 @@ describe("Lottery Contract", function () {
 
     it("Validating Ticket price and jackpot amount", async function () {
       const { hardhatToken, owner, addr1 } = await loadFixture(deployLotteryFixture);
-      expect(await hardhatToken.jackpotAmount()).to.equal(0);
+      expect(await ethers.provider.getBalance(hardhatToken)).to.equal(0);
     });
   });
 
@@ -49,13 +49,31 @@ describe("Lottery Contract", function () {
     });
   });
 
-  describe("Buying Tickets Validations", function () {
+  describe("Setting Random Number validations", function () {
+    it("Validating the Set Random Number Function", async function () {
+      const { hardhatToken, owner, addr1 } = await loadFixture(deployLotteryFixture);
+      expect(await hardhatToken.randomRange()).to.equal(100000);
+
+      await hardhatToken.connect(owner).setRandomRange(1000);
+      
+      expect(await hardhatToken.randomRange()).to.equal(1000);
+    });
+
+    it("Non owner modifying random range", async function () {
+      const { hardhatToken, owner, addr1 } = await loadFixture(deployLotteryFixture);
+      await expect(
+          hardhatToken.connect(addr1).setTicketPrice(1000)
+        ).to.be.revertedWith("Only the contract owner can call this method");
+    });
+  });
+
+  describe("Buying Tickets Tests", function () {
     it("Buying Ticket success case", async function () {
       const { hardhatToken, owner, addr1, addr2 } = await loadFixture(deployLotteryFixture);
       await expect(
           hardhatToken.connect(addr1).buyTicket({ value: ethers.parseEther("0.1") })
         ).to.emit(hardhatToken, "Transfer");
-      expect (await hardhatToken.jackpotAmount()).to.equal(ethers.parseEther("0.1"));
+      expect (await ethers.provider.getBalance(hardhatToken)).to.equal(ethers.parseEther("0.1"));
     });
 
     it("Buying Ticket incorrect ticket amount sent", async function () {
@@ -74,6 +92,57 @@ describe("Lottery Contract", function () {
       await expect(
           hardhatToken.connect(addr1).buyTicket({ value: ethers.parseEther("1") })
         ).to.be.revertedWith("Not enough tokens to buy the ticket");
+    });
+  });
+
+  describe("Play Lottery Tests", function () {
+    it("Validating success case", async function() {
+      const { hardhatToken, owner, addr1, addr2 } = await loadFixture(deployLotteryFixture);
+
+      // Setting the random value to 1 so that we win every time, this is only for test
+      await hardhatToken.connect(owner).setRandomRange(0);
+
+      let jackpotBeforeTicket = ethers.formatEther(await ethers.provider.getBalance(hardhatToken));
+      expect(jackpotBeforeTicket).to.equal("0.0");
+
+      let addr1InitialBalance = ethers.formatEther(await ethers.provider.getBalance(addr1));
+      expect(addr1InitialBalance).to.equal("10000.0");
+
+      // Buying a ticket
+      await expect(
+        hardhatToken.connect(addr1).buyTicket({ value: ethers.parseEther("0.1") })
+      ).to.emit(hardhatToken, "Transfer");
+
+      let jackpotAfterTikcet = ethers.formatEther(await ethers.provider.getBalance(hardhatToken));
+      expect(jackpotAfterTikcet).to.equal("0.1");
+
+      await expect(
+        hardhatToken.connect(addr1).play()
+      ).to.emit(hardhatToken, "Won");
+
+      let jackpotBalanceAfterWinning = ethers.formatEther(await ethers.provider.getBalance(hardhatToken));
+      expect(jackpotBalanceAfterWinning).to.equal("0.0");
+
+      let addr1BalanceAfterWinning = ethers.formatEther(await ethers.provider.getBalance(addr1));
+      expect(addr1BalanceAfterWinning).to.equal("9999.999853896055358371");
+    });
+
+    it("Play without buying a ticket", async function() {
+      const {hardhatToken, owner, addr1 } = await loadFixture(deployLotteryFixture);
+
+      await expect(hardhatToken.connect(addr1).play()).to.be.revertedWith("User doesn't have a ticket");
+    });
+
+    it("Losing case", async function() {
+      const {hardhatToken, owner, addr1 } = await loadFixture(deployLotteryFixture);
+
+      await expect(
+        hardhatToken.connect(addr1).buyTicket({ value: ethers.parseEther("0.1") })
+      ).to.emit(hardhatToken, "Transfer");
+      
+      await expect(
+        hardhatToken.connect(addr1).play()
+      ).to.emit(hardhatToken, "Lost");
     });
 
   });
